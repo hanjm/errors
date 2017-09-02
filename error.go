@@ -34,14 +34,11 @@ type stackFrame struct {
 func (e *Err) Error() string {
 	e.once.Do(func() {
 		buf := bytes.NewBuffer(make([]byte, 0, 1024))
-		var messages []string
-		msg := e.message
-		if e.stdError != nil {
-			msg = fmt.Sprintf("%s err:%s", msg, e.stdError.Error())
-		}
-		stack := e.stack
-		messages = append(messages, msg)
-		for prev := e.prevErr; prev != nil; prev = prev.prevErr {
+		var (
+			messages []string
+			stack    []uintptr
+		)
+		for prev := e; prev != nil; prev = prev.prevErr {
 			stack = prev.stack
 			if prev.stdError != nil {
 				messages = append(messages, fmt.Sprintf("%s err:%s", prev.message, prev.stdError.Error()))
