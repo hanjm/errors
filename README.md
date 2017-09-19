@@ -39,4 +39,45 @@ func func2() (err error) {
 func func3(i int) (err error) {
 	return Errorf(nil, "unexpected param")
 }
+
+var (
+	errSomeUnexpected = errors.New("someUnexpected")
+)
+
+// 示例代码2  error常量的情况
+// func11 调用func22 func22调用func33
+// 在func33使用errors.Errorf包装error常量,收集最完整的调用栈, 其他地方用Wrapf, 最后打log
+// 调用func33处可以用类型转换后调Inner()方法来取到上一步包装的error常量
+func func11() {
+	requestID := "11"
+	err := func22()
+	if err != nil {
+		err = Errorf(err, "[%s] 123", requestID)
+		log.Print(err)
+		// log output:
+		/*
+		2017/09/02 18:55:35 [errors/example.go:67:func33:unexpected param err:someUnexpected]
+		[errors/example.go:56:func22:i=3]
+		[errors/example.go:46:func11:[11] 123]
+		[errors/error_test.go:26:TestExample2:]
+		*/
+	}
+	return
+}
+
+func func22() (err error) {
+	i := 3
+	err = func33(i)
+	if err != nil {
+		if err2, ok := err.(*Err); ok && err2.Inner() == errSomeUnexpected {
+			fmt.Printf("==\n识别到上一步的std error:%s\n==\n", err2.Inner())
+		}
+		return Errorf(err, "i=%d", i)
+	}
+	return
+}
+
+func func33(i int) (err error) {
+	return Errorf(errSomeUnexpected, "unexpected param")
+}
 ```
