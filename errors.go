@@ -58,7 +58,7 @@ func (e *Err) Error() string {
 				sf.file = "???"
 				sf.line = 0
 				sf.funcName = "???"
-				fmt.Fprintf(buf, "[%s:%d:%s:%s]\n", sf.file, sf.line, sf.funcName, sf.message)
+				fmt.Fprintf(buf, "\n\t[%s:%d:%s:%s]", sf.file, sf.line, sf.funcName, sf.message)
 				continue
 			}
 			sf.file, sf.line = funcForPc.FileLine(v - 1)
@@ -70,18 +70,22 @@ func (e *Err) Error() string {
 			if len(match) > 1 {
 				sf.file = match[1]
 			}
+			// 此处可以自定义filter, 忽略一些固定的框架的调用栈信息
+			//if strings.HasPrefix(sf.file, "github.com") {
+			//	continue
+			//}
 			// 处理函数名
 			sf.funcName = funcForPc.Name()
 			// 保证闭包函数名也能正确显示 如TestErrorf.func1:
-			idx := strings.LastIndex(sf.funcName, "/")
+			idx := strings.LastIndexByte(sf.funcName, '/')
 			if idx != -1 {
 				sf.funcName = sf.funcName[idx:]
-				idx = strings.Index(sf.funcName, ".")
+				idx = strings.IndexByte(sf.funcName, '.')
 				if idx != -1 {
 					sf.funcName = strings.TrimPrefix(sf.funcName[idx:], ".")
 				}
 			}
-			fmt.Fprintf(buf, "[%s:%d:%s:%s]\n", sf.file, sf.line, sf.funcName, sf.message)
+			fmt.Fprintf(buf, "\n\t[%s:%d:%s:%s]", sf.file, sf.line, sf.funcName, sf.message)
 		}
 		e.fullMessage = buf.String()
 	})
@@ -104,12 +108,10 @@ func New(msg string) error {
 }
 
 // Errorf
-// 传入的err为nil:
-// 		用于最早出错的地方, 会收集调用栈
-// 传入的err不为nil:
-// 		用于包装上一步New/Errorf返回的error/*Err, 添加错误注释, 如 比"xx function error"更直接的错误说明、调用函数的参数值等
+//	用于包装上一步New/Errorf返回的error/*Err, 添加错误注释, 如 比"xx function error"更直接的错误说明、调用函数的参数值等
+// 			如果参数error类型不为*Err(error常量或自定义error类型或nil), 用于最早出错的地方, 会收集调用栈
 // 			如果参数error类型为*Err, 不会收集调用栈.
-// 			如果参数error类型不为*Err, 会收集调用栈.
+//  上层调用方可以通过GetInner/GetInnerMost得到里层/最里层被包装过的error常量
 func Errorf(err error, format string, a ...interface{}) error {
 	var msg string
 	if len(a) == 0 {
@@ -135,4 +137,27 @@ func new_(msg string) *Err {
 		message: msg,
 		stack:   pc[:length],
 	}
+}
+
+// GetInner
+// 返回上一步传入Errorf的error常量
+// 用于简化写这么一大长串类型断言 if err2, ok := err.(*Err); ok && err2.Inner() == errSomeUnexpected {}
+func GetInner(err error) (error) {
+	if err2, ok := err.(*Err); ok {
+		return err2.Inner()
+	}
+	return err
+}
+
+// GetInnerMost
+// 返回最早的被包装过的error常量
+func GetInnerMost(err error) (error) {
+	if err2, ok := err.(*Err); ok {
+		var innerMost error
+		for prev := err2; prev != nil; prev = prev.prevErr {
+			innerMost = prev.stdError
+		}
+		return innerMost
+	}
+	return err
 }

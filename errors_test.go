@@ -18,10 +18,10 @@ func TestErrorf(t *testing.T) {
 	t.Log(err)
 }
 
-func TestExample(t *testing.T) {
-	func1()
+func TestExample1(t *testing.T) {
+	ExampleFunc1()
 }
 
 func TestExample2(t *testing.T) {
-	func11()
+	ExampleFunc11()
 }
