@@ -4,14 +4,20 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"regexp"
 	"runtime"
 	"strings"
 	"sync"
+	"strconv"
 )
 
-var re = regexp.MustCompile(`.+?/src/(.+)`)
 var goRoot = runtime.GOROOT()
+
+var formatPartHead = []byte{'\n', '\t', '['}
+
+const (
+	formatPartColon = ':'
+	formatPartTail  = ']'
+)
 
 type Err struct {
 	message  string
@@ -58,7 +64,16 @@ func (e *Err) Error() string {
 				sf.file = "???"
 				sf.line = 0
 				sf.funcName = "???"
-				fmt.Fprintf(buf, "\n\t[%s:%d:%s:%s]", sf.file, sf.line, sf.funcName, sf.message)
+				//fmt.Fprintf(buf, "\n\t[%s:%d:%s:%s]", sf.file, sf.line, sf.funcName, sf.message)
+				buf.Write(formatPartHead)
+				buf.WriteString(sf.file)
+				buf.WriteByte(formatPartColon)
+				buf.WriteString(strconv.Itoa(sf.line))
+				buf.WriteByte(formatPartColon)
+				buf.WriteString(sf.funcName)
+				buf.WriteByte(formatPartColon)
+				buf.WriteString(sf.message)
+				buf.WriteByte(formatPartTail)
 				continue
 			}
 			sf.file, sf.line = funcForPc.FileLine(v - 1)
@@ -66,11 +81,10 @@ func (e *Err) Error() string {
 			if strings.HasPrefix(sf.file, goRoot) {
 				continue
 			}
-			match := re.FindStringSubmatch(sf.file)
-			if len(match) > 1 {
-				sf.file = match[1]
+			const src = "/src/"
+			if idx := strings.Index(sf.file, src); idx > 0 {
+				sf.file = sf.file[idx+len(src):]
 			}
-			// 此处可以自定义filter, 忽略一些固定的框架的调用栈信息
 			//if strings.HasPrefix(sf.file, "github.com") {
 			//	continue
 			//}
@@ -85,7 +99,16 @@ func (e *Err) Error() string {
 					sf.funcName = strings.TrimPrefix(sf.funcName[idx:], ".")
 				}
 			}
-			fmt.Fprintf(buf, "\n\t[%s:%d:%s:%s]", sf.file, sf.line, sf.funcName, sf.message)
+			//fmt.Fprintf(buf, "\n\t[%s:%d:%s:%s]", sf.file, sf.line, sf.funcName, sf.message)
+			buf.Write(formatPartHead)
+			buf.WriteString(sf.file)
+			buf.WriteByte(formatPartColon)
+			buf.WriteString(strconv.Itoa(sf.line))
+			buf.WriteByte(formatPartColon)
+			buf.WriteString(sf.funcName)
+			buf.WriteByte(formatPartColon)
+			buf.WriteString(sf.message)
+			buf.WriteByte(formatPartTail)
 		}
 		e.fullMessage = buf.String()
 	})
