@@ -17,6 +17,7 @@ var formatPartHead = []byte{'\n', '\t', '['}
 const (
 	formatPartColon = ':'
 	formatPartTail  = ']'
+	formatPartSpace = ' '
 )
 
 type Err struct {
@@ -66,10 +67,11 @@ func (e *Err) Error() string {
 				sf.funcName = "???"
 				//fmt.Fprintf(buf, "\n\t[%s:%d:%s:%s]", sf.file, sf.line, sf.funcName, sf.message)
 				buf.Write(formatPartHead)
+				buf.WriteByte(formatPartSpace)
 				buf.WriteString(sf.file)
 				buf.WriteByte(formatPartColon)
 				buf.WriteString(strconv.Itoa(sf.line))
-				buf.WriteByte(formatPartColon)
+				buf.WriteByte(formatPartSpace)
 				buf.WriteString(sf.funcName)
 				buf.WriteByte(formatPartColon)
 				buf.WriteString(sf.message)
@@ -81,6 +83,11 @@ func (e *Err) Error() string {
 			if strings.HasPrefix(sf.file, goRoot) {
 				continue
 			}
+			//match := re.FindStringSubmatch(sf.file)
+			//if len(match) > 1 {
+			//	sf.file = match[1]
+			//}
+			// regexp消耗大, 优化为更高效的字符串处理
 			const src = "/src/"
 			if idx := strings.Index(sf.file, src); idx > 0 {
 				sf.file = sf.file[idx+len(src):]
@@ -101,10 +108,12 @@ func (e *Err) Error() string {
 			}
 			//fmt.Fprintf(buf, "\n\t[%s:%d:%s:%s]", sf.file, sf.line, sf.funcName, sf.message)
 			buf.Write(formatPartHead)
+			// 处理文件名行号时增加空格, 以便让IDE识别到, 可以点击跳转到源码.
+			buf.WriteByte(formatPartSpace)
 			buf.WriteString(sf.file)
 			buf.WriteByte(formatPartColon)
 			buf.WriteString(strconv.Itoa(sf.line))
-			buf.WriteByte(formatPartColon)
+			buf.WriteByte(formatPartSpace)
 			buf.WriteString(sf.funcName)
 			buf.WriteByte(formatPartColon)
 			buf.WriteString(sf.message)
