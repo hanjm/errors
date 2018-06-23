@@ -14,6 +14,9 @@ var goRoot = runtime.GOROOT()
 
 var formatPartHead = []byte{'\n', '\t', '['}
 
+// for errors_test.go
+var filterGithub = true
+
 const (
 	formatPartColon = ':'
 	formatPartTail  = ']'
@@ -92,9 +95,9 @@ func (e *Err) Error() string {
 			if idx := strings.Index(sf.file, src); idx > 0 {
 				sf.file = sf.file[idx+len(src):]
 			}
-			//if strings.HasPrefix(sf.file, "github.com") {
-			//	continue
-			//}
+			if filterGithub && strings.HasPrefix(sf.file, "github.com") {
+				continue
+			}
 			// 处理函数名
 			sf.funcName = funcForPc.Name()
 			// 保证闭包函数名也能正确显示 如TestErrorf.func1:

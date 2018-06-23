@@ -4,6 +4,11 @@ import (
 	"testing"
 )
 
+func TestMain(m *testing.M) {
+	filterGithub = false
+	m.Run()
+}
+
 func TestErrorf(t *testing.T) {
 	err := Errorf(nil, "this is a error message")
 	t.Log(err)
