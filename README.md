@@ -5,7 +5,7 @@
 errors包装error对象, 添加调用栈及附加自定义信息, 以便于从日志中快速定位问题.
 特点:
 1. 相比 github.com/pkg/errors github.com/juju/errors 开销小, 只在最早出错的地方会调用runtime.Callers, 只调用一次.
-2. 按[文件名:行号:函数名:message]分行格式化输出, funcName不显示package path, fileName不显示src之前的字符.
+2. 按[ 文件名:行号:函数名 message ]分行格式化输出, funcName不显示package path, fileName不显示src之前的字符. Goland等IDE可以在控制台上点击错误信息定位源码.
 3. 可以在 errors.go:74 处自定义一些filter, 忽略一些固定的框架的调用栈信息.
 
 doc:
@@ -32,9 +32,9 @@ func func1() {
 		// log ouuput:
 		/*
 			2017/09/02 18:55:35 [errors/example.go:33:func3:unexpected param]
-			[errors/example.go:25:func2:i=3]
-			[errors/example.go:15:func1:[1] 123]
-			[errors/error_test.go:22:TestExample:]
+			[ errors/example.go:25 func2:i=3]
+			[ errors/example.go:15 func1:[1] 123]
+			[ errors/error_test.go:22 TestExample:]
 		*/
 	}
 	return
@@ -71,9 +71,9 @@ func func11() {
 		// log output:
 		/*
 		2017/09/02 18:55:35 [errors/example.go:67:func33:unexpected param err:someUnexpected]
-		[errors/example.go:56:func22:i=3]
-		[errors/example.go:46:func11:[11] 123]
-		[errors/error_test.go:26:TestExample2:]
+		[ errors/example.go:56 func22:i=3]
+		[ errors/example.go:46 func11:[11] 123]
+		[ errors/error_test.go:26 TestExample2:]
 		*/
 	}
 	return
