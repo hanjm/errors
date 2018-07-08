@@ -16,7 +16,7 @@ func Errorf(err error, format string, a ...interface{}) error {
 用于包装上一步New/Errorf返回的error/*Err, 添加错误注释, 如 比"xx function error"更直接的错误说明、调用函数的参数值等
  			如果参数error类型不为*Err(error常量或自定义error类型或nil), 用于最早出错的地方, 会收集调用栈
  			如果参数error类型为*Err, 不会收集调用栈.
-上层调用方可以通过GetInner/GetInnerMost得到里层/最里层被包装过的error常量
+上层调用方可以通过GetInnerMost得到最里层被包装过的error常量
 
 ```go
 // 示例代码1 非error常量的情况
@@ -60,8 +60,7 @@ var (
 // 示例代码2  error常量的情况
 // ExampleFunc11 调用func22 func22调用func33
 // 在func33使用errors.Errorf包装error常量,收集最完整的调用栈, 最后打log
-// 调用func33处可以用类型转换后调GetInner()方法来取到上一步包装的error常量
-// 调用func22处可以用类型转换后调GetInnerMost()方法来取到最里层被包装的error常量
+// 调用func22处可以调GetInnerMost()方法来取到最里层被包装的error常量
 func func11() {
 	requestID := "11"
 	err := func22()

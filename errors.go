@@ -146,7 +146,7 @@ func New(msg string) error {
 //	用于包装上一步New/Errorf返回的error/*Err, 添加错误注释, 如 比"xx function error"更直接的错误说明、调用函数的参数值等
 // 			如果参数error类型不为*Err(error常量或自定义error类型或nil), 用于最早出错的地方, 会收集调用栈
 // 			如果参数error类型为*Err, 不会收集调用栈.
-//  上层调用方可以通过GetInner/GetInnerMost得到里层/最里层被包装过的error常量
+//  上层调用方可以通过GetInnerMost得到里层/最里层被包装过的error常量
 func Errorf(err error, format string, a ...interface{}) error {
 	var msg string
 	if len(a) == 0 {
@@ -172,16 +172,6 @@ func new_(msg string) *Err {
 		message: msg,
 		stack:   pc[:length],
 	}
-}
-
-// GetInner
-// 返回上一步传入Errorf的error常量
-// 用于简化写这么一大长串类型断言 if err2, ok := err.(*Err); ok && err2.Inner() == errSomeUnexpected {}
-func GetInner(err error) (error) {
-	if err2, ok := err.(*Err); ok {
-		return err2.Inner()
-	}
-	return err
 }
 
 // GetInnerMost
