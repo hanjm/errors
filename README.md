@@ -5,8 +5,8 @@
 errors包装error对象, 添加调用栈及附加自定义信息, 以便于从日志中快速定位问题.
 特点:
 1. 相比 github.com/pkg/errors github.com/juju/errors 开销小, 只在最早出错的地方会调用runtime.Callers, 只调用一次.
-2. 按[ 文件名:行号 函数名:message ]分行格式化输出, funcName不显示package path, fileName不显示src之前的字符. Goland等IDE可以在控制台上点击错误信息定位源码.
-3. 可以在 errors.go:74 处自定义一些filter, 忽略一些固定的框架的调用栈信息.
+2. 对齐调用栈和附加上下文信息, 按[ 文件名:行号 函数名:message ]分行格式化输出, funcName不显示package path, fileName不显示src之前的字符. Goland等IDE可以在控制台上点击错误信息定位源码.
+3. 精简调用栈输出, 默认忽略标准库和 github.com 下的包的调用栈, 也可以在 errors.go:85 处自定义一些filter, 忽略一些固定的框架的调用栈信息.
 
 doc:
 ```go
