@@ -10,7 +10,7 @@ import (
 	"strconv"
 )
 
-var goRoot = runtime.GOROOT()
+var goRoot = strings.Replace(runtime.GOROOT(),"\\","/",-1)
 
 var formatPartHead = []byte{'\n', '\t', '['}
 
