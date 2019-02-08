@@ -5,17 +5,33 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
-	"strconv"
 )
 
 var goRoot = strings.Replace(runtime.GOROOT(),"\\","/",-1)
 
 var formatPartHead = []byte{'\n', '\t', '['}
 
-// for errors_test.go
-var filterGithub = true
+var defaultFilterFunc filterFunc = func(fileName string, funcName string) (filtered bool) {
+	if strings.HasPrefix(fileName, "github.com") {
+		return true
+	}
+	return false
+}
+
+// SetFilterFunc
+// if f return true, this caller frame will be excluded in error string, make tidy.
+// default, it excluded github.com*
+func SetFilterFunc(f filterFunc) {
+	defaultFilterFunc = f
+}
+
+// filterFunc
+// file is the filename which trimmed */src/ prefix.
+// funcName is funcName which trimmed / prefix.
+type filterFunc func(fileName string, funcName string) (filtered bool)
 
 const (
 	formatPartColon = ':'
@@ -86,17 +102,9 @@ func (e *Err) Error() string {
 			if strings.HasPrefix(sf.file, goRoot) {
 				continue
 			}
-			//match := re.FindStringSubmatch(sf.file)
-			//if len(match) > 1 {
-			//	sf.file = match[1]
-			//}
-			// regexp消耗大, 优化为更高效的字符串处理
 			const src = "/src/"
 			if idx := strings.Index(sf.file, src); idx > 0 {
 				sf.file = sf.file[idx+len(src):]
-			}
-			if filterGithub && strings.HasPrefix(sf.file, "github.com") {
-				continue
 			}
 			// 处理函数名
 			sf.funcName = funcForPc.Name()
@@ -108,6 +116,9 @@ func (e *Err) Error() string {
 				if idx != -1 {
 					sf.funcName = strings.TrimPrefix(sf.funcName[idx:], ".")
 				}
+			}
+			if defaultFilterFunc != nil && defaultFilterFunc(sf.file, sf.funcName) {
+				continue
 			}
 			//fmt.Fprintf(buf, "\n\t[%s:%d:%s:%s]", sf.file, sf.line, sf.funcName, sf.message)
 			buf.Write(formatPartHead)
@@ -160,12 +171,12 @@ func Errorf(err error, format string, a ...interface{}) error {
 			prevErr: err,
 		}
 	}
-	newErr := new_(msg)
+	newErr := newErr(msg)
 	newErr.stdError = err
 	return newErr
 }
 
-func new_(msg string) *Err {
+func newErr(msg string) *Err {
 	pc := make([]uintptr, 200)
 	length := runtime.Callers(3, pc)
 	return &Err{

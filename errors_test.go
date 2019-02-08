@@ -5,7 +5,9 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	filterGithub = false
+	SetFilterFunc(func(fileName string, funcName string) (filtered bool) {
+		return false
+	})
 	m.Run()
 }
 
