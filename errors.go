@@ -172,6 +172,10 @@ func Errorf(err error, format string, a ...interface{}) error {
 		}
 	}
 	newErr := newErr(msg)
+	if err == nil {
+		// 让GetInnerMost不返回nil
+		err = errors.New(msg)
+	}
 	newErr.stdError = err
 	return newErr
 }
@@ -187,7 +191,7 @@ func newErr(msg string) *Err {
 
 // GetInnerMost
 // 返回最早的被包装过的error常量
-func GetInnerMost(err error) (error) {
+func GetInnerMost(err error) error {
 	if err2, ok := err.(*Err); ok {
 		var innerMost error
 		for prev := err2; prev != nil; prev = prev.prevErr {
