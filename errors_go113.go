@@ -1,9 +1,8 @@
-// +build !go1.13
+// +build go1.13
 
 package errors
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"runtime"
@@ -12,7 +11,7 @@ import (
 	"sync"
 )
 
-var goRoot = strings.Replace(runtime.GOROOT(),"\\","/",-1)
+var goRoot = strings.Replace(runtime.GOROOT(), "\\", "/", -1)
 
 var formatPartHead = []byte{'\n', '\t', '['}
 
@@ -61,7 +60,8 @@ type stackFrame struct {
 // Error
 func (e *Err) Error() string {
 	e.once.Do(func() {
-		buf := bytes.NewBuffer(make([]byte, 0, 1024))
+		var buf strings.Builder
+		buf.Grow(512)
 		var (
 			messages []string
 			stack    []uintptr
@@ -150,9 +150,64 @@ func (e *Err) Inner() error {
 	return e.stdError
 }
 
+// As
+// 适配 GO1.13 errors.As errors.Is errors.Unwrap
+func (e *Err) As(target interface{}) bool {
+	if e.stdError != nil {
+		return errors.As(e.stdError, target)
+	}
+	if e.prevErr != nil {
+		return errors.As(e.prevErr, target)
+	}
+	// 最里层
+	return errors.As(errors.New(e.message), target)
+}
+
+// Is
+// 适配 GO1.13 errors.As errors.Is errors.Unwrap
+func (e *Err) Is(target error) bool {
+	if e.stdError != nil {
+		return errors.Is(e.stdError, target)
+	}
+	if e.prevErr != nil {
+		return errors.Is(e.prevErr, target)
+	}
+	// 最里层
+	return errors.Is(errors.New(e.message), target)
+}
+
+// Unwrap
+// 适配 GO1.13 errors.As errors.Is errors.Unwrap
+func (e *Err) Unwrap() error {
+	if e.stdError != nil {
+		return errors.Unwrap(e.stdError)
+	}
+	if e.prevErr != nil {
+		return errors.Unwrap(e.prevErr)
+	}
+	// 最里层
+	return errors.New(e.message)
+}
+
 // New 是标准库中的New函数 只能用于定义error常量使用
 func New(msg string) error {
 	return errors.New(msg)
+}
+
+// As 是标准库中的As函数, 如果err是此包的*errors.Err类型, 那么实际上是判断最里层的err能不能转为target
+func As(err error, target interface{}) bool {
+	return errors.As(err, target)
+}
+
+// Is 是标准库中的Is函数, 如果err是此包的*errors.Err类型, 那么实际上是判断最里层的err是不是target
+func Is(err error, target error) bool {
+	return errors.Is(err, target)
+}
+
+// Unwrap 是标准库中的Unwrap函数
+// 使用前必须能搞清楚它是怎么工作的, 否则不推荐使用
+func Unwrap(err error) error {
+	return errors.Unwrap(err)
 }
 
 // Errorf
